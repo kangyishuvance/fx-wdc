@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- correct CDN path, no extra folder level -->
   <script src="https://connectors.tableau.com/libs/tableauwdc-2.3.0.min.js"></script>
 </head>
 
@@ -11,18 +12,18 @@
   <button id="run">Fetch rates</button>
 
   <script>
-    /* global tableau */           /* silences VS Code lint */
+    /* global tableau */        /* silences VS Code lint */
 
     const apiUrl = "https://open.er-api.com/v6/latest/SGD";
     const myConnector = tableau.makeConnector();
 
-    /** 1. init — MUST call the callback  */
+    /* 1️⃣  REQUIRED. Call the callback Tableau gives you  */
     myConnector.init = function (initCallback) {
-      initCallback();                               // <-- you had tableau.initCallback()
-      // no auto-submit here; let the user (or Tableau) call submit later
+      initCallback();                                // <-- NOT tableau.initCallback()
+      // Do NOT auto-submit here; Tableau will handle it in refreshes.
     };
 
-    /** 2. tell Tableau the table shape */
+    /* 2️⃣  Table structure */
     myConnector.getSchema = function (schemaCallback) {
       schemaCallback([{
         id: "fx_rates",
@@ -34,7 +35,7 @@
       }]);
     };
 
-    /** 3. fetch data only during the gather phase */
+    /* 3️⃣  Pull data only when Tableau is in the gather-data phase */
     myConnector.getData = function (table, done) {
       fetch(apiUrl)
         .then(r => r.json())
@@ -49,7 +50,7 @@
 
     tableau.registerConnector(myConnector);
 
-    /** 4. user clicks → submit (only works inside Tableau/Simulator) */
+    /* 4️⃣  User clicks → submit (only works inside Tableau/Simulator) */
     document.getElementById("run").addEventListener("click", () => {
       tableau.connectionName = "SGD FX Rates";
       tableau.submit();
