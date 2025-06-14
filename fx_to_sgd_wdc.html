@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://connectors.tableau.com/libs/tableauwdc-2.0.0.js"></script>
+</head>
+
+<body>
+  <h3>FX rates to SGD</h3>
+  <p>Click the button, then “Update Now” in Tableau.</p>
+  <button id="getDataBtn">Fetch rates</button>
+
+  <script>
+    (function () {
+      const apiUrl = "https://open.er-api.com/v6/latest/SGD";
+
+      const myConnector = tableau.makeConnector();
+
+      myConnector.init = (initCallback) => {
+        tableau.initCallback();
+        if (tableau.phase === tableau.phaseEnum.gatherData) {
+          document.getElementById("getDataBtn").click(); // auto-run in refreshes
+        }
+      };
+
+      myConnector.getSchema = (schemaCallback) => {
+        schemaCallback([{
+          id: "fx_rates",
+          alias: "FX rates versus SGD",
+          columns: [
+            { id: "Currency", dataType: tableau.dataTypeEnum.string },
+            { id: "Rate",     dataType: tableau.dataTypeEnum.float  }
+          ]
+        }]);
+      };
+
+      myConnector.getData = (table, done) => {
+        fetch(apiUrl)
+          .then(r => r.json())
+          .then(js => {
+            const rows = Object.entries(js.rates)
+                               .map(([ccy, rate]) => ({ Currency: ccy, Rate: rate }));
+            table.appendRows(rows);
+            done();
+          });
+      };
+
+      tableau.registerConnector(myConnector);
+
+      document.getElementById("getDataBtn")
+              .addEventListener("click", () => tableau.submit());
+    })();
+  </script>
+</body>
+</html>
